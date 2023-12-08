@@ -109,7 +109,7 @@ if(BUILD_TESTS)
     # Set compilation flags.
     target_compile_options(${PROJECT_NAME}_test_concurrency PUBLIC ${COMPILE_OPTIONS})
     # Liking for the test.
-    target_link_libraries(${PROJECT_NAME}_test_concurrency ${PROJECT_NAME})
+    target_link_libraries(${PROJECT_NAME}_test_concurrency ${PROJECT_NAME} pthread)
     # Add the test.
     add_test(${PROJECT_NAME}_test_concurrency_run ${PROJECT_NAME}_test_concurrency)
 
