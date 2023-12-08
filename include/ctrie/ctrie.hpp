@@ -1,6 +1,6 @@
 /// @file ctrie.hpp
 /// @author Enrico Fraccaroli (enry.frak@gmail.com)
-/// @brief
+/// @brief The ctrie main code.
 
 #pragma once
 
