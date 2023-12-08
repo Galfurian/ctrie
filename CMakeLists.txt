@@ -109,7 +109,11 @@ if(BUILD_TESTS)
     # Set compilation flags.
     target_compile_options(${PROJECT_NAME}_test_concurrency PUBLIC ${COMPILE_OPTIONS})
     # Liking for the test.
-    target_link_libraries(${PROJECT_NAME}_test_concurrency ${PROJECT_NAME} pthread)
+    target_link_libraries(${PROJECT_NAME}_test_concurrency ${PROJECT_NAME})
+    # Link pthread.
+    if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+        target_link_libraries(${PROJECT_NAME}_test_concurrency ${PROJECT_NAME} pthread)
+    endif()
     # Add the test.
     add_test(${PROJECT_NAME}_test_concurrency_run ${PROJECT_NAME}_test_concurrency)
 
