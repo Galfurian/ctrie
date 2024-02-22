@@ -20,60 +20,66 @@ std::mutex mutex_;
 std::condition_variable condVar1;
 std::condition_variable condVar2;
 
-int counter    = 0;
-int COUNTLIMIT = 50;
+const int COUNTLIMIT = 10;
 
-void setTrue() // (1)
+void initialize()
+{
+    trie.insert(KEY, 0);
+}
+
+void increment_even() // (1)
 {
     int value;
-    while (counter < COUNTLIMIT) { // (7)
+    while (true) { // (7)
         std::unique_lock<std::mutex> lck(mutex_);
         condVar1.wait(lck, [&] {
             trie.find(KEY, value);
-            return (value % 2) == false;
+            return ((value % 2) == 0) || (value >= COUNTLIMIT);
         }); // (4)
-
+        if (value >= COUNTLIMIT) {
+            break;
+        }
         trie.insert(KEY, value + 1);
-
-        ++counter; // (5)
-
         condVar2.notify_one(); // (6)
     }
 }
 
-void setFalse() // (2)
+void increment_odd() // (2)
 {
     int value;
-    while (counter < COUNTLIMIT) { // (8)
+    while (true) { // (8)
         std::unique_lock<std::mutex> lck(mutex_);
         condVar2.wait(lck, [&] {
             trie.find(KEY, value);
-            return (value % 2) == true;
+            return ((value % 2) != 0) || (value >= COUNTLIMIT);
         });
+        if (value >= COUNTLIMIT) {
+            break;
+        }
         trie.insert(KEY, value + 1);
-
         condVar1.notify_one();
     }
 }
 
 int main(int, char *[])
 {
-    trie.insert(KEY, 0);
-
     int value;
-    trie.find(KEY, value);
-    if (value != 0)
-        return 1;
+    for (unsigned i = 0; i < 1000; ++i) {
+        initialize();
 
-    std::thread t1(setTrue);
-    std::thread t2(setFalse);
+        std::thread t1(increment_even);
+        std::thread t2(increment_odd);
 
-    t1.join();
-    t2.join();
+        t1.join();
+        t2.join();
 
-    trie.find(KEY, value);
-    if (value != 100)
-        return 1;
+        trie.find(KEY, value);
+
+        if (value != COUNTLIMIT) {
+            std::cerr << "During run " << i << " we found the wrong value " << value << "\n";
+            return 1;
+        }
+    }
     return 0;
 }
 #endif

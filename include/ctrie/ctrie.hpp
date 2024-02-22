@@ -248,6 +248,10 @@ public:
 #endif
         // Check if there is a root.
         if (_root == NULL) {
+#if __cplusplus >= 201103L
+            // Unlock the mutex.
+            _mutex.unlock();
+#endif
             return false;
         }
         // Initialize the node to the root.
@@ -295,6 +299,10 @@ public:
 #endif
         // Check if there is a root.
         if (_root == NULL) {
+#if __cplusplus >= 201103L
+            // Unlock the mutex.
+            _mutex.unlock();
+#endif
             return false;
         }
         // Initialize the node to the root.
