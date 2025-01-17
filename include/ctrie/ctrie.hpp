@@ -4,6 +4,7 @@
 
 #pragma once
 
+#include <sstream>
 #include <iostream>
 #include <string>
 
@@ -144,21 +145,43 @@ public:
         return false;
     }
 
-    std::string toString() const
+    std::string toString(const std::string &prefix = "", bool isLast = true) const
     {
-        std::string str;
-        str += key;
-        if (this->hasChildren()) {
-            str += "<";
-            for (std::size_t i = 0; i < MAX_KEYS; ++i)
-                if (children[i])
-                    str += children[i]->toString();
-            str += ">";
+        std::stringstream ss;
+        // Print the current node with its prefix, except for the root.
+        if (parent) {
+            ss << prefix;
+            ss << (isLast ? "└─" : "├─");
         }
-        return str;
+        ss << key;
+        if (snode) {
+            ss << " : " << snode->getValue();
+        }
+        ss << "\n";
+        // Compute the new prefix for children.
+        std::string childPrefix = prefix + (isLast ? "  " : "│ ");
+        // Iterate over children.
+        for (std::size_t i = 0; i < MAX_KEYS; ++i) {
+            if (children[i]) {
+                // Determine if this child is the last one.
+                ss << children[i]->toString(childPrefix, this->isLastChild(i));
+            }
+        }
+        return ss.str();
     }
 
 private:
+    /// @brief Checks if there are more children after the given index.
+    bool isLastChild(std::size_t index) const
+    {
+        for (std::size_t i = index + 1; i < MAX_KEYS; ++i) {
+            if (children[i]) {
+                return false;
+            }
+        }
+        return true;
+    }
+
     inline void __remove_child(std::size_t index)
     {
         if (children[index])

@@ -34,6 +34,7 @@ mark_as_advanced(FORCE
 
 option(STRICT_WARNINGS "Enable strict compiler warnings" ON)
 option(WARNINGS_AS_ERRORS "Treat all warnings as errors" OFF)
+option(BUILD_EXAMPLES "Build examples" OFF)
 option(BUILD_TESTS "Build tests" OFF)
 
 # -----------------------------------------------------------------------------
@@ -48,11 +49,11 @@ find_package(Doxygen)
 # -----------------------------------------------------------------------------
 
 # Add the C++ library.
-add_library(${PROJECT_NAME} INTERFACE)
-add_library(${PROJECT_NAME}::${PROJECT_NAME} ALIAS ${PROJECT_NAME})
+add_library(ctrie INTERFACE)
+add_library(ctrie::ctrie ALIAS ctrie)
 
 # Inlcude header directories.
-target_include_directories(${PROJECT_NAME} INTERFACE ${PROJECT_SOURCE_DIR}/include)
+target_include_directories(ctrie INTERFACE ${PROJECT_SOURCE_DIR}/include)
 
 # -----------------------------------------------------------------------------
 # Set the compilation flags.
@@ -60,14 +61,14 @@ target_include_directories(${PROJECT_NAME} INTERFACE ${PROJECT_SOURCE_DIR}/inclu
 
 if(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
     # Disable warnings that suggest using MSVC-specific safe functions
-    target_compile_definitions(${PROJECT_NAME} INTERFACE _CRT_SECURE_NO_WARNINGS)
+    target_compile_definitions(ctrie INTERFACE _CRT_SECURE_NO_WARNINGS)
 
     if(WARNINGS_AS_ERRORS)
-        target_compile_options(${PROJECT_NAME} INTERFACE /WX)
+        target_compile_options(ctrie INTERFACE /WX)
     endif()
 elseif(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
     if(WARNINGS_AS_ERRORS)
-        target_compile_options(${PROJECT_NAME} INTERFACE -Werror)
+        target_compile_options(ctrie INTERFACE -Werror)
     endif()
 endif()
 
@@ -75,15 +76,41 @@ if(STRICT_WARNINGS)
     if(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
         # Mark system headers as external for MSVC explicitly
         # https://devblogs.microsoft.com/cppblog/broken-warnings-theory
-        target_compile_options(${PROJECT_NAME} INTERFACE /experimental:external)
-        target_compile_options(${PROJECT_NAME} INTERFACE /external:I ${CMAKE_BINARY_DIR})
-        target_compile_options(${PROJECT_NAME} INTERFACE /external:anglebrackets)
-        target_compile_options(${PROJECT_NAME} INTERFACE /external:W0)
+        target_compile_options(ctrie INTERFACE /experimental:external)
+        target_compile_options(ctrie INTERFACE /external:I ${CMAKE_BINARY_DIR})
+        target_compile_options(ctrie INTERFACE /external:anglebrackets)
+        target_compile_options(ctrie INTERFACE /external:W0)
 
-        target_compile_options(${PROJECT_NAME} INTERFACE /W4)
+        target_compile_options(ctrie INTERFACE /W4)
     elseif(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-        target_compile_options(${PROJECT_NAME} INTERFACE -Wall -Wextra -Wconversion -pedantic)
+        target_compile_options(ctrie INTERFACE -Wall -Wextra -Wconversion -pedantic)
     endif()
+endif()
+
+# -----------------------------------------------------------------------------
+# EXAMPLES
+# -----------------------------------------------------------------------------
+
+if(BUILD_EXAMPLES)
+
+    add_executable(ctrie_example_insert ${PROJECT_SOURCE_DIR}/examples/example_insert.cpp)
+    target_link_libraries(ctrie_example_insert ctrie)
+
+    add_executable(ctrie_example_find ${PROJECT_SOURCE_DIR}/examples/example_find.cpp)
+    target_link_libraries(ctrie_example_find ctrie)
+
+    add_executable(ctrie_example_remove ${PROJECT_SOURCE_DIR}/examples/example_remove.cpp)
+    target_link_libraries(ctrie_example_remove ctrie)
+    
+    add_executable(ctrie_example_thread_safety ${PROJECT_SOURCE_DIR}/examples/example_thread_safety.cpp)
+    target_link_libraries(ctrie_example_thread_safety ctrie)
+    
+    add_executable(ctrie_example_serialize ${PROJECT_SOURCE_DIR}/examples/example_serialize.cpp)
+    target_link_libraries(ctrie_example_serialize ctrie)
+        
+    add_executable(ctrie_example_complex ${PROJECT_SOURCE_DIR}/examples/example_complex.cpp)
+    target_link_libraries(ctrie_example_complex ctrie)
+
 endif()
 
 # -----------------------------------------------------------------------------
@@ -96,26 +123,26 @@ if(BUILD_TESTS)
     enable_testing()
     
     # Add the test.
-    add_executable(${PROJECT_NAME}_test_ctrie ${PROJECT_SOURCE_DIR}/tests/test_ctrie.cpp)
+    add_executable(ctrie_test_ctrie ${PROJECT_SOURCE_DIR}/tests/test_ctrie.cpp)
     # Set compilation flags.
-    target_compile_options(${PROJECT_NAME}_test_ctrie PUBLIC ${COMPILE_OPTIONS})
+    target_compile_options(ctrie_test_ctrie PUBLIC ${COMPILE_OPTIONS})
     # Liking for the test.
-    target_link_libraries(${PROJECT_NAME}_test_ctrie ${PROJECT_NAME})
+    target_link_libraries(ctrie_test_ctrie ctrie)
     # Add the test.
-    add_test(${PROJECT_NAME}_test_ctrie_run ${PROJECT_NAME}_test_ctrie)
+    add_test(ctrie_test_ctrie_run ctrie_test_ctrie)
 
     # Add the test.
-    add_executable(${PROJECT_NAME}_test_concurrency ${PROJECT_SOURCE_DIR}/tests/test_concurrency.cpp)
+    add_executable(ctrie_test_concurrency ${PROJECT_SOURCE_DIR}/tests/test_concurrency.cpp)
     # Set compilation flags.
-    target_compile_options(${PROJECT_NAME}_test_concurrency PUBLIC ${COMPILE_OPTIONS})
+    target_compile_options(ctrie_test_concurrency PUBLIC ${COMPILE_OPTIONS})
     # Liking for the test.
-    target_link_libraries(${PROJECT_NAME}_test_concurrency ${PROJECT_NAME})
+    target_link_libraries(ctrie_test_concurrency ctrie)
     # Link pthread.
     if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-        target_link_libraries(${PROJECT_NAME}_test_concurrency ${PROJECT_NAME} pthread)
+        target_link_libraries(ctrie_test_concurrency ctrie pthread)
     endif()
     # Add the test.
-    add_test(${PROJECT_NAME}_test_concurrency_run ${PROJECT_NAME}_test_concurrency)
+    add_test(ctrie_test_concurrency_run ctrie_test_concurrency)
 
 endif()
 
@@ -158,7 +185,7 @@ if(DOXYGEN_FOUND)
         ${doxygenawesome_SOURCE_DIR}/doxygen-awesome-darkmode-toggle.js
     )
     doxygen_add_docs(
-        ${PROJECT_NAME}_documentation
+        ctrie_documentation
         ${PROJECT_SOURCE_DIR}/include/ctrie/ctrie.hpp
     )
 endif()
