@@ -12,35 +12,44 @@
 #include <mutex>
 #endif
 
+#define CTRIE_MAJOR_VERSION 1 ///< Major version of the library.
+#define CTRIE_MINOR_VERSION 0 ///< Minor version of the library.
+#define CTRIE_MICRO_VERSION 0 ///< Micro version of the library.
+
 namespace ctrie
 {
 
+/// @brief The maximum number of keys.
 #define MAX_KEYS 128
 
-typedef char key_t;
+/// @brief The type of the key.
+using key_t = char;
 
 /// @brief A node of the prefix tree.
 template <typename T>
 class SNode {
 public:
     /// @brief Construct a new node.
+    /// @param _value The value to store.
     SNode(const T &_value)
         : value(_value)
     {
         // Nothing to do.
     }
 
-    ~SNode()
-    {
-        // Nothing to do.
-    }
+    /// @brief Destruct the node.
+    virtual ~SNode() = default;
 
-    void setValue(const T &_value)
+    /// @brief Set the value of the node.
+    /// @param _value The value to store.
+    inline void setValue(const T &_value)
     {
         value = _value;
     }
 
-    T getValue() const
+    /// @brief Get the value of the node.
+    /// @return The value of the node.
+    inline T getValue() const
     {
         return value;
     }
@@ -55,6 +64,8 @@ template <typename T>
 class CNode {
 public:
     /// @brief Construct a new node.
+    /// @param _parent The parent of the node.
+    /// @param _key The key of the node.
     CNode(CNode<T> *_parent, key_t _key)
         : parent(_parent), key(_key), snode(), children()
     {
@@ -63,6 +74,9 @@ public:
     }
 
     /// @brief Construct a new node.
+    /// @param _parent The parent of the node.
+    /// @param _key The key of the node.
+    /// @param _value The value of the node.
     CNode(CNode<T> *_parent, key_t _key, const T &_value)
         : parent(_parent), key(_key), snode(new SNode<T>(_value)), children()
     {
@@ -70,7 +84,8 @@ public:
             children[i] = NULL;
     }
 
-    ~CNode()
+    /// @brief Destruct the node.
+    virtual ~CNode()
     {
         if (snode)
             delete snode;
@@ -79,34 +94,45 @@ public:
                 delete children[i];
     }
 
-    key_t getKey() const
+    /// @brief Get the key of the node.
+    /// @return The key of the node.
+    inline key_t getKey() const
     {
         return key;
     }
 
-    CNode<T> *getParent() const
+    /// @brief Get the parent of the node.
+    /// @return The parent of the node.
+    inline CNode<T> *getParent() const
     {
         return parent;
     }
 
-    void clearSNode()
+    /// @brief Clear the stored value.
+    inline void clearSNode()
     {
         if (snode)
             delete snode;
         snode = NULL;
     }
 
-    void setSNode(const T &_value)
+    /// @brief Set the stored value.
+    /// @param _value The value to store.
+    inline void setSNode(const T &_value)
     {
         this->clearSNode();
         snode = new SNode<T>(_value);
     }
 
-    SNode<T> *getSNode() const
+    /// @brief Get the stored value.
+    /// @return The stored value.
+    inline SNode<T> *getSNode() const
     {
         return snode;
     }
 
+    /// @brief Remove the child with the given key.
+    /// @param c The key of the child to remove.
     inline void removeChild(key_t c)
     {
         if (c < 0)
@@ -114,7 +140,11 @@ public:
         __remove_child(static_cast<std::size_t>(c));
     }
 
-    CNode<T> *insertChild(key_t c, CNode<T> *child)
+    /// @brief Insert a child with the given key.
+    /// @param c The key of the child to insert.
+    /// @param child The child to insert.
+    /// @return The inserted child.
+    inline CNode<T> *insertChild(key_t c, CNode<T> *child)
     {
         if (c < 0)
             throw std::domain_error("Key is a negative value.");
@@ -123,21 +153,29 @@ public:
         return (children[index] = child);
     }
 
-    CNode<T> *at(key_t c)
+    /// @brief Get the child with the given key.
+    /// @param c The key of the child to get.
+    /// @return The child with the given key.
+    inline CNode<T> *at(key_t c)
     {
         if (c < 0)
             throw std::domain_error("Key is a negative value.");
         return children[static_cast<std::size_t>(c)];
     }
 
-    const CNode<T> *at(key_t c) const
+    /// @brief Get the child with the given key.
+    /// @param c The key of the child to get.
+    /// @return The child with the given key.
+    inline const CNode<T> *at(key_t c) const
     {
         if (c < 0)
             throw std::domain_error("Key is a negative value.");
         return children[static_cast<std::size_t>(c)];
     }
 
-    bool hasChildren() const
+    /// @brief Check if the node has children.
+    /// @return true if the node has children, false otherwise.
+    inline bool hasChildren() const
     {
         for (std::size_t i = 0; i < MAX_KEYS; ++i)
             if (children[i])
@@ -145,6 +183,10 @@ public:
         return false;
     }
 
+    /// @brief Get the string representation of the node.
+    /// @param prefix The prefix to prepend to each line of the output.
+    /// @param isLast Whether this node is the last child in a sequence.
+    /// @return A string representing the node.
     std::string toString(const std::string &prefix = "", bool isLast = true) const
     {
         std::stringstream ss;
@@ -172,7 +214,8 @@ public:
 
 private:
     /// @brief Checks if there are more children after the given index.
-    bool isLastChild(std::size_t index) const
+    /// @param index The index to check.
+    inline bool isLastChild(std::size_t index) const
     {
         for (std::size_t i = index + 1; i < MAX_KEYS; ++i) {
             if (children[i]) {
@@ -182,6 +225,8 @@ private:
         return true;
     }
 
+    /// @brief Remove the child at the given index.
+    /// @param index The index of the child to remove.
     inline void __remove_child(std::size_t index)
     {
         if (children[index])
@@ -210,7 +255,7 @@ public:
         // Nothing to do.
     }
 
-    ~CTrie()
+    virtual ~CTrie()
     {
         if (_root)
             delete _root;
@@ -220,7 +265,7 @@ public:
     /// @param key the key.
     /// @param value the value.
     /// @return true if the isertion was successfull, false otherwise.
-    bool insert(const std::string &key, T value)
+    inline bool insert(const std::string &key, T value)
     {
         // Check if the key is empty.
         if (key.empty()) {
@@ -259,7 +304,7 @@ public:
     /// @param key the key to use for the search.
     /// @param value the output variable where the found value is stored.
     /// @return true if we have found the value, false otherwise.
-    bool find(const std::string &key, T &value) const
+    inline bool find(const std::string &key, T &value) const
     {
         // Check if the key is empty.
         if (key.empty()) {
@@ -310,7 +355,7 @@ public:
     /// @brief Inserisce la coppia chaive valore nel Trie.
     /// @param key   La chiave.
     /// @return Se l'inserimento e' andato a buon fine.
-    bool remove(const std::string &key)
+    inline bool remove(const std::string &key)
     {
         // Check if the key is empty.
         if (key.empty()) {
@@ -369,6 +414,8 @@ public:
         return false;
     }
 
+    /// @brief Get the string representation of the tree.
+    /// @return A string representing the tree.
     std::string toString() const
     {
         if (_root)
@@ -387,6 +434,11 @@ private:
 
 } // namespace ctrie
 
+/// @brief Overload of the operator << for the CTrie class.
+/// @tparam T The type of the value.
+/// @param lhs the stream.
+/// @param rhs the trie.
+/// @return the stream.
 template <typename T>
 std::ostream &operator<<(std::ostream &lhs, const ctrie::CTrie<T> &rhs)
 {

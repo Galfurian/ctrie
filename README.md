@@ -58,8 +58,8 @@ if you have suggestions, bug reports, or improvements.
 
 ## License
 
-This project is unlicensed. See the LICENSE file for details.
+This project is licensed under the MIT License - see the `LICENSE.md` file for details.
 
 ## Acknowledgments
 
-Author: Enrico Fraccaroli (enry.frak@gmail.com)
+Author: Enrico Fraccaroli (<enry.frak@gmail.com>)
