@@ -4,8 +4,8 @@
 
 #pragma once
 
-#include <sstream>
 #include <iostream>
+#include <sstream>
 #include <string>
 
 #if __cplusplus >= 201103L
@@ -26,8 +26,8 @@ namespace ctrie
 using key_t = char;
 
 /// @brief A node of the prefix tree.
-template <typename T>
-class SNode {
+template <typename T> class SNode
+{
 public:
     /// @brief Construct a new node.
     /// @param _value The value to store.
@@ -42,17 +42,11 @@ public:
 
     /// @brief Set the value of the node.
     /// @param _value The value to store.
-    inline void setValue(const T &_value)
-    {
-        value = _value;
-    }
+    inline void setValue(const T &_value) { value = _value; }
 
     /// @brief Get the value of the node.
     /// @return The value of the node.
-    inline T getValue() const
-    {
-        return value;
-    }
+    inline T getValue() const { return value; }
 
 private:
     /// The stored value.
@@ -60,14 +54,17 @@ private:
 };
 
 /// @brief A node of the prefix tree.
-template <typename T>
-class CNode {
+template <typename T> class CNode
+{
 public:
     /// @brief Construct a new node.
     /// @param _parent The parent of the node.
     /// @param _key The key of the node.
     CNode(CNode<T> *_parent, key_t _key)
-        : parent(_parent), key(_key), snode(), children()
+        : parent(_parent)
+        , key(_key)
+        , snode()
+        , children()
     {
         for (std::size_t i = 0; i < MAX_KEYS; ++i)
             children[i] = NULL;
@@ -78,7 +75,10 @@ public:
     /// @param _key The key of the node.
     /// @param _value The value of the node.
     CNode(CNode<T> *_parent, key_t _key, const T &_value)
-        : parent(_parent), key(_key), snode(new SNode<T>(_value)), children()
+        : parent(_parent)
+        , key(_key)
+        , snode(new SNode<T>(_value))
+        , children()
     {
         for (std::size_t i = 0; i < MAX_KEYS; ++i)
             children[i] = NULL;
@@ -96,17 +96,11 @@ public:
 
     /// @brief Get the key of the node.
     /// @return The key of the node.
-    inline key_t getKey() const
-    {
-        return key;
-    }
+    inline key_t getKey() const { return key; }
 
     /// @brief Get the parent of the node.
     /// @return The parent of the node.
-    inline CNode<T> *getParent() const
-    {
-        return parent;
-    }
+    inline CNode<T> *getParent() const { return parent; }
 
     /// @brief Clear the stored value.
     inline void clearSNode()
@@ -126,10 +120,7 @@ public:
 
     /// @brief Get the stored value.
     /// @return The stored value.
-    inline SNode<T> *getSNode() const
-    {
-        return snode;
-    }
+    inline SNode<T> *getSNode() const { return snode; }
 
     /// @brief Remove the child with the given key.
     /// @param c The key of the child to remove.
@@ -245,8 +236,8 @@ private:
 };
 
 /// @brief A prefix tree.
-template <typename T>
-class CTrie {
+template <typename T> class CTrie
+{
 public:
     /// @brief Construct a new ctrie.
     CTrie()
@@ -439,8 +430,7 @@ private:
 /// @param lhs the stream.
 /// @param rhs the trie.
 /// @return the stream.
-template <typename T>
-std::ostream &operator<<(std::ostream &lhs, const ctrie::CTrie<T> &rhs)
+template <typename T> std::ostream &operator<<(std::ostream &lhs, const ctrie::CTrie<T> &rhs)
 {
     lhs << rhs.toString();
     return lhs;

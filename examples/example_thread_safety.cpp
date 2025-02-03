@@ -18,8 +18,7 @@ int main()
     t1.join();
     t2.join();
 
-    std::cout << "Trie contents:\n"
-              << trie << std::endl;
+    std::cout << "Trie contents:\n" << trie << std::endl;
 
     return 0;
 }

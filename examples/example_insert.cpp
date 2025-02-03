@@ -8,8 +8,7 @@ int main()
     trie.insert("app", "Abbreviation for application");
     trie.insert("banana", "Another fruit");
 
-    std::cout << "Trie contents:\n"
-              << trie << std::endl;
+    std::cout << "Trie contents:\n" << trie << std::endl;
 
     return 0;
 }

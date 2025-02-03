@@ -8,13 +8,11 @@ int main()
     trie.insert("two", 2);
     trie.insert("three", 3);
 
-    std::cout << "Before removal:\n"
-              << trie << std::endl;
+    std::cout << "Before removal:\n" << trie << std::endl;
 
     trie.remove("two");
 
-    std::cout << "After removing 'two':\n"
-              << trie << std::endl;
+    std::cout << "After removing 'two':\n" << trie << std::endl;
 
     return 0;
 }

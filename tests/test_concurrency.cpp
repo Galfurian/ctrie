@@ -2,10 +2,7 @@
 
 #if __cplusplus < 201103L
 
-int main(int, char *[])
-{
-    return 0;
-}
+int main(int, char *[]) { return 0; }
 #else
 
 #include <condition_variable>
@@ -22,10 +19,7 @@ std::condition_variable condVar2;
 
 const int COUNTLIMIT = 10;
 
-void initialize()
-{
-    trie.insert(KEY, 0);
-}
+void initialize() { trie.insert(KEY, 0); }
 
 void increment_even() // (1)
 {
