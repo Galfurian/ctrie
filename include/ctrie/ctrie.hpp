@@ -26,7 +26,8 @@ namespace ctrie
 using key_t = char;
 
 /// @brief A node of the prefix tree.
-template <typename T> class SNode
+template <typename T>
+class SNode
 {
 public:
     /// @brief Construct a new node.
@@ -54,7 +55,8 @@ private:
 };
 
 /// @brief A node of the prefix tree.
-template <typename T> class CNode
+template <typename T>
+class CNode
 {
 public:
     /// @brief Construct a new node.
@@ -236,7 +238,8 @@ private:
 };
 
 /// @brief A prefix tree.
-template <typename T> class CTrie
+template <typename T>
+class CTrie
 {
 public:
     /// @brief Construct a new ctrie.
@@ -430,7 +433,8 @@ private:
 /// @param lhs the stream.
 /// @param rhs the trie.
 /// @return the stream.
-template <typename T> std::ostream &operator<<(std::ostream &lhs, const ctrie::CTrie<T> &rhs)
+template <typename T>
+std::ostream &operator<<(std::ostream &lhs, const ctrie::CTrie<T> &rhs)
 {
     lhs << rhs.toString();
     return lhs;
