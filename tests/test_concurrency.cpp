@@ -1,8 +1,14 @@
+/// @file test_concurrency.cpp
+/// @brief Simple concurrency ctrie test.
+/// Copyright (c) 2024-2025. All rights reserved.
+/// Licensed under the MIT License. See LICENSE file in the project root for details.
+
 #include "ctrie/ctrie.hpp"
 
 #if __cplusplus < 201103L
 
 int main(int, char *[]) { return 0; }
+
 #else
 
 #include <condition_variable>

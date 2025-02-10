@@ -1,13 +1,14 @@
 /// @file ctrie.hpp
 /// @author Enrico Fraccaroli (enry.frak@gmail.com)
 /// @brief The ctrie main code.
-
 #pragma once
 
+#include <algorithm>
+#include <array>
 #include <iostream>
+#include <memory>
 #include <sstream>
 #include <string>
-#include <array>
 
 #if __cplusplus >= 201103L
 #include <mutex>
@@ -35,7 +36,7 @@ class SNode
 public:
     /// @brief Construct a new node.
     /// @param _value The value to store.
-    SNode(const T &_value)
+    explicit SNode(const T &_value)
         : value(_value)
     {
         // Nothing to do.
@@ -43,41 +44,21 @@ public:
 
     /// @brief Copy constructor.
     /// @param other The instance to copy from.
-    SNode(const SNode &other)
-        : value(other.value)
-    {
-        // Nothing to do.
-    }
+    SNode(const SNode &other) = delete;
 
     /// @brief Copy assignment operator.
     /// @param other The instance to copy from.
     /// @return Reference to the instance.
-    auto operator=(const SNode &other) -> SNode &
-    {
-        if (this != &other) {
-            value = other.value;
-        }
-        return *this;
-    }
+    auto operator=(const SNode &other) -> SNode & = delete;
 
     /// @brief Move constructor.
     /// @param other The instance to move from.
-    SNode(SNode &&other) noexcept
-        : value(std::move(other.value))
-    {
-        // Nothing to do.
-    }
+    SNode(SNode &&other) noexcept = delete;
 
     /// @brief Move assignment operator.
     /// @param other The instance to move from.
     /// @return Reference to the instance.
-    auto operator=(SNode &&other) noexcept -> SNode &
-    {
-        if (this != &other) {
-            value = std::move(other.value);
-        }
-        return *this;
-    }
+    auto operator=(SNode &&other) noexcept -> SNode & = delete;
 
     /// @brief Destruct the node.
     virtual ~SNode() = default;
@@ -97,50 +78,54 @@ private:
 
 /// @brief A node of the prefix tree.
 template <typename T>
-class CNode
+class CNode : std::enable_shared_from_this<CNode<T>>
 {
 public:
     /// @brief Construct a new node.
     /// @param _parent The parent of the node.
     /// @param _key The key of the node.
-    CNode(CNode<T> *_parent, key_t _key)
+    CNode(const std::shared_ptr<CNode<T>> &_parent, key_t _key)
         : parent(_parent)
         , key(_key)
         , snode()
         , children()
     {
-        for (auto &i : children) {
-            i = NULL;
-        }
+        // Nothing to do.
     }
 
     /// @brief Construct a new node.
     /// @param _parent The parent of the node.
     /// @param _key The key of the node.
     /// @param _value The value of the node.
-    CNode(CNode<T> *_parent, key_t _key, const T &_value)
+    CNode(std::shared_ptr<CNode<T>> _parent, key_t _key, const T &_value)
         : parent(_parent)
         , key(_key)
-        , snode(new SNode<T>(_value))
+        , snode(std::make_shared<SNode<T>>(_value))
         , children()
     {
-        for (auto &i : children) {
-            i = NULL;
-        }
+        // Nothing to do.
     }
 
+    /// @brief Copy constructor.
+    /// @param other The instance to copy from.
+    CNode(const CNode &other) = delete;
+
+    /// @brief Copy assignment operator.
+    /// @param other The instance to copy from.
+    /// @return Reference to the instance.
+    auto operator=(const CNode &other) -> CNode & = delete;
+
+    /// @brief Move constructor.
+    /// @param other The instance to move from.
+    CNode(CNode &&other) = delete;
+
+    /// @brief Move assignment operator.
+    /// @param other The instance to move from.
+    /// @return Reference to the instance.
+    auto operator=(CNode &&other) noexcept -> CNode & = delete;
+
     /// @brief Destruct the node.
-    virtual ~CNode()
-    {
-        if (snode) {
-            delete snode;
-        }
-        for (auto &child : children) {
-            if (child) {
-                delete child;
-            }
-        }
-    }
+    virtual ~CNode() = default;
 
     /// @brief Get the key of the node.
     /// @return The key of the node.
@@ -148,80 +133,83 @@ public:
 
     /// @brief Get the parent of the node.
     /// @return The parent of the node.
-    auto getParent() const -> CNode<T> * { return parent; }
+    auto getParent() const -> std::shared_ptr<CNode<T>> { return parent.lock(); }
 
     /// @brief Clear the stored value.
-    void clearSNode()
-    {
-        if (snode) {
-            delete snode;
-        }
-        snode = NULL;
-    }
+    void clearSNode() { snode.reset(); }
 
     /// @brief Set the stored value.
     /// @param _value The value to store.
-    void setSNode(const T &_value)
-    {
-        this->clearSNode();
-        snode = new SNode<T>(_value);
-    }
+    void setSNode(const T &_value) { snode = std::make_shared<SNode<T>>(_value); }
 
     /// @brief Get the stored value.
     /// @return The stored value.
-    auto getSNode() const -> SNode<T> * { return snode; }
+    auto getSNode() const -> std::shared_ptr<SNode<T>> { return snode; }
 
     /// @brief Remove the child with the given key.
     /// @param c The key of the child to remove.
+    /// @throws std::out_of_range if the key is out of bounds.
     void removeChild(key_t c)
     {
-        if (c < 0) {
-            throw std::domain_error("Key is a negative value.");
+        // Check if the index is within the valid range of the children array.
+        auto index = static_cast<std::size_t>(c);
+        if (index >= children.size()) {
+            throw std::out_of_range("removeChild: key out of bounds");
         }
-        _remove_child(static_cast<std::size_t>(c));
+        // Reset (remove) the child at the given index.
+        children[index].reset();
     }
 
     /// @brief Insert a child with the given key.
     /// @param c The key of the child to insert.
     /// @param child The child to insert.
-    /// @return The inserted child.
-    auto insertChild(key_t c, CNode<T> *child) -> CNode<T> *
+    /// @throws std::out_of_range if the key is out of bounds.
+    void insertChild(key_t c, const std::shared_ptr<CNode<T>> &child)
     {
-        if (c < 0) {
-            throw std::domain_error("Key is a negative value.");
-        }
+        // Check if the index is within the valid range of the children array.
         auto index = static_cast<std::size_t>(c);
-        _remove_child(index);
-        return (children[index] = child);
+        if (index >= children.size()) {
+            throw std::out_of_range("insertChild: key out of bounds");
+        }
+        // Insert the child.
+        children[index] = child;
     }
 
     /// @brief Get the child with the given key.
     /// @param c The key of the child to get.
     /// @return The child with the given key.
-    auto at(key_t c) -> CNode<T> *
+    /// @throws std::out_of_range if the key is out of bounds.
+    auto at(key_t c) -> std::shared_ptr<CNode<T>>
     {
-        if (c < 0) {
-            throw std::domain_error("Key is a negative value.");
+        // Check if the index is within the valid range of the children array.
+        auto index = static_cast<std::size_t>(c);
+        if (index >= children.size()) {
+            throw std::out_of_range("at: key out of bounds");
         }
-        return children[static_cast<std::size_t>(c)];
+        // Return the child.
+        return children[index];
     }
 
     /// @brief Get the child with the given key.
     /// @param c The key of the child to get.
     /// @return The child with the given key.
-    auto at(key_t c) const -> const CNode<T> *
+    /// @throws std::out_of_range if the key is out of bounds.
+    auto at(key_t c) const -> std::shared_ptr<CNode<T>>
     {
-        if (c < 0) {
-            throw std::domain_error("Key is a negative value.");
+        // Check if the index is within the valid range of the children array.
+        auto index = static_cast<std::size_t>(c);
+        if (index >= children.size()) {
+            throw std::out_of_range("at (const): key out of bounds");
         }
-        return children[static_cast<std::size_t>(c)];
+        // Return the child.
+        return children[index];
     }
 
     /// @brief Check if the node has children.
     /// @return true if the node has children, false otherwise.
     auto hasChildren() const -> bool
     {
-        for (auto &child : children) {
+        for (const auto &child : children) {
             if (child) {
                 return true;
             }
@@ -237,7 +225,7 @@ public:
     {
         std::stringstream ss;
         // Print the current node with its prefix, except for the root.
-        if (parent) {
+        if (parent.lock()) {
             ss << prefix;
             ss << (isLast ? "└─" : "├─");
         }
@@ -249,7 +237,7 @@ public:
         // Compute the new prefix for children.
         std::string childPrefix = prefix + (isLast ? "  " : "│ ");
         // Iterate over children.
-        for (std::size_t i = 0; i < MAX_KEYS; ++i) {
+        for (std::size_t i = 0; i < children.size(); ++i) {
             if (children[i]) {
                 // Determine if this child is the last one.
                 ss << children[i]->toString(childPrefix, this->isLastChild(i));
@@ -261,34 +249,28 @@ public:
 private:
     /// @brief Checks if there are more children after the given index.
     /// @param index The index to check.
+    /// @return true if there are no children after the given index, false otherwise.
     auto isLastChild(std::size_t index) const -> bool
     {
-        for (std::size_t i = index + 1; i < MAX_KEYS; ++i) {
+        // Iterate through the children starting from the next index.
+        for (std::size_t i = index + 1; i < children.size(); ++i) {
+            // If a child exists at any position after the given index, return false.
             if (children[i]) {
                 return false;
             }
         }
+        // No children found after the given index, return true.
         return true;
     }
 
-    /// @brief Remove the child at the given index.
-    /// @param index The index of the child to remove.
-    void _remove_child(std::size_t index)
-    {
-        if (children[index]) {
-            delete children[index];
-        }
-        children[index] = NULL;
-    }
-
     /// A pointer to the parent.
-    CNode<T> *parent;
+    std::weak_ptr<CNode<T>> parent;
     /// The key associated with the node.
     key_t key;
     /// The stored value.
-    SNode<T> *snode;
+    std::shared_ptr<SNode<T>> snode;
     /// The childrens of the node.
-    std::array<CNode<T> *, MAX_KEYS> children;
+    std::array<std::shared_ptr<CNode<T>>, MAX_KEYS> children;
 };
 
 /// @brief A prefix tree.
@@ -297,57 +279,57 @@ class CTrie
 {
 public:
     /// @brief Construct a new ctrie.
-    CTrie()
-        : _root(NULL)
-    {
-        // Nothing to do.
-    }
+    CTrie() = default;
 
-    virtual ~CTrie()
-    {
-        {
-            delete _root;
-        }
-    }
+    /// @brief Destroy the CTrie object.
+    virtual ~CTrie() { _root.reset(); }
+
+    /// @brief Copy constructor.
+    CTrie(const CTrie &other) = delete;
+
+    /// @brief Copy assignment operator.
+    auto operator=(const CTrie &other) -> CTrie & = delete;
+
+    /// @brief Move constructor.
+    CTrie(CTrie &&other) noexcept = delete;
+
+    /// @brief Move assignment operator.
+    auto operator=(CTrie &&other) noexcept -> CTrie & = delete;
 
     /// @brief Inserts the key-value pair into the Trie.
-    /// @param key the key.
-    /// @param value the value.
-    /// @return true if the isertion was successfull, false otherwise.
+    /// @param key The key to insert.
+    /// @param value The value associated with the key.
+    /// @return true if the insertion was successful, false otherwise.
     auto insert(const std::string &key, T value) -> bool
     {
-        // Check if the key is empty.
+        // Return false if the key is empty.
         if (key.empty()) {
             return false;
         }
 #if __cplusplus >= 201103L
-        // Lock the mutex.
-        _mutex.lock();
+        // Automatically lock the mutex for thread safety.
+        std::lock_guard<std::mutex> lock(_mutex);
 #endif
-        // Check if there is a root.
-        if (_root == NULL) {
-            _root = new CNode<T>(NULL, 0);
+        // Initialize the root node if it doesn't exist.
+        if (!_root) {
+            _root = std::make_shared<CNode<T>>(nullptr, 0);
         }
-        // Initialize the node to the root.
-        CNode<T> *node  = _root;
-        CNode<T> *child = nullptr;
-        // Iterate on the characters of the node.
-        for (char it : key) {
-            // Search the child.
-            child = node->at(it);
-            // If I can't find any child with the respective letter, create one.
-            if (child == NULL) {
-                child = node->insertChild(it, new CNode<T>(node, it));
+        // Start from the root node.
+        auto node = _root;
+        // Traverse the Trie, creating child nodes if they don't exist.
+        for (const auto &ch : key) {
+            auto child = node->at(ch);
+            // Create a new child node if the current character doesn't exist.
+            if (!child) {
+                child = std::make_shared<CNode<T>>(node, ch);
+                node->insertChild(ch, child);
             }
-            // Node now points to the child.
+            // Move to the next child node.
             node = child;
         }
-        // Set the value.
+        // Set the value at the final node.
         node->setSNode(value);
-#if __cplusplus >= 201103L
-        // Unlock the mutex.
-        _mutex.unlock();
-#endif
+        // Return true indicating successful insertion.
         return true;
     }
 
@@ -357,113 +339,79 @@ public:
     /// @return true if we have found the value, false otherwise.
     auto find(const std::string &key, T &value) const -> bool
     {
-        // Check if the key is empty.
-        if (key.empty()) {
+        // Return false if the key is empty or there's no root node.
+        if (key.empty() || !_root) {
             return false;
         }
 #if __cplusplus >= 201103L
-        // Lock the mutex.
-        _mutex.lock();
+        // Automatically lock and unlock the mutex.
+        std::lock_guard<std::mutex> lock(_mutex);
 #endif
-        // Check if there is a root.
-        if (_root == NULL) {
-#if __cplusplus >= 201103L
-            // Unlock the mutex.
-            _mutex.unlock();
-#endif
-            return false;
-        }
-        // Initialize the node to the root.
-        const CNode<T> *node  = _root;
-        const CNode<T> *child = nullptr;
-        // Iterate on the characters of the node.
-        for (char it : key) {
-            // Search the child.
-            child = node->at(it);
-            // If I can't find any child with the respective letter, stop the search.
-            if (child == nullptr) {
-                node = NULL;
-                break;
+
+        // Start from the root node.
+        auto node = _root;
+        // Traverse the trie using each character in the key.
+        for (char ch : key) {
+            // Move to the corresponding child node.
+            node = node->at(ch);
+            if (!node) {
+                // Key path doesn't exist.
+                return false;
             }
-            // Node now points to the child.
-            node = child;
         }
-        // Set the output variable.
-        if (node && node->getSNode()) {
+        // If the node holds a value, assign it and return true.
+        if (node->getSNode()) {
             value = node->getSNode()->getValue();
-#if __cplusplus >= 201103L
-            // Unlock the mutex.
-            _mutex.unlock();
-#endif
             return true;
         }
-#if __cplusplus >= 201103L
-        // Unlock the mutex.
-        _mutex.unlock();
-#endif
+        // Key exists, but no associated value found.
         return false;
     }
 
-    /// @brief Inserisce la coppia chaive valore nel Trie.
-    /// @param key   La chiave.
-    /// @return Se l'inserimento e' andato a buon fine.
+    /// @brief Removes the key-value pair from the Trie.
+    /// @param key The key to remove.
+    /// @return true if the removal was successful, false otherwise.
     auto remove(const std::string &key) -> bool
     {
-        // Check if the key is empty.
-        if (key.empty()) {
+        // Return false if the key is empty or there's no root node.
+        if (key.empty() || !_root) {
             return false;
         }
 #if __cplusplus >= 201103L
-        // Lock the mutex.
-        _mutex.lock();
+        // Automatically lock and unlock the mutex.
+        std::lock_guard<std::mutex> lock(_mutex);
 #endif
-        // Check if there is a root.
-        if (_root == NULL) {
-#if __cplusplus >= 201103L
-            // Unlock the mutex.
-            _mutex.unlock();
-#endif
-            return false;
-        }
-        // Initialize the node to the root.
-        CNode<T> *node  = _root;
-        CNode<T> *child = nullptr;
-        // Iterate on the characters of the node.
-        for (char it : key) {
-            // Search the child.
-            child = node->at(it);
-            // If I can't find any child with the respective letter, stop the search.
-            if (child == nullptr) {
-                node = NULL;
-                break;
+
+        // Start from the root node.
+        auto node = _root;
+        // Traverse the Trie to find the node corresponding to the key.
+        for (char ch : key) {
+            node = node->at(ch);
+            if (!node) {
+                // Key path doesn't exist.
+                return false;
             }
-            // Node now points to the child.
-            node = child;
         }
-        // Set the output variable.
-        if (node && node->getSNode()) {
-            // Cancella il valore.
+        // If the node has an associated value, remove it.
+        if (node->getSNode()) {
+            // Clear the stored value.
             node->clearSNode();
-            // If the node has no children, remove the node.
-            while (true) {
-                child = node;
-                node  = node->getParent();
-                if (!child->hasChildren() && child->getParent() && !child->getSNode()) {
-                    child->getParent()->removeChild(child->getKey());
+            // Remove nodes up the parent chain if they meet removal conditions.
+            while (node) {
+                auto parent = node->getParent();
+                if (!node->hasChildren() && parent && !node->getSNode()) {
+                    parent->removeChild(node->getKey());
+                    // Move to the parent node.
+                    node = parent;
                 } else {
+                    // Stop if the current node shouldn't be removed.
                     break;
                 }
             }
-#if __cplusplus >= 201103L
-            // Unlock the mutex.
-            _mutex.unlock();
-#endif
+            // Key successfully removed.
             return true;
         }
-#if __cplusplus >= 201103L
-        // Unlock the mutex.
-        _mutex.unlock();
-#endif
+        // Key exists but no value to remove.
         return false;
     }
 
@@ -479,7 +427,7 @@ public:
 
 private:
     /// The root of the tree.
-    CNode<T> *_root;
+    std::shared_ptr<CNode<T>> _root;
 #if __cplusplus >= 201103L
     /// Internal mutex for thread safety.
     mutable std::mutex _mutex;

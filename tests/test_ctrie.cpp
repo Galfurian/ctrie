@@ -1,3 +1,8 @@
+/// @file test_ctrie.cpp
+/// @brief Simple ctrie test.
+/// Copyright (c) 2024-2025. All rights reserved.
+/// Licensed under the MIT License. See LICENSE file in the project root for details.
+
 #include "ctrie/ctrie.hpp"
 #include <iostream>
 
