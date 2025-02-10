@@ -133,7 +133,7 @@ if(BUILD_EXAMPLES)
     target_link_libraries(${PROJECT_NAME}_example_remove ${PROJECT_NAME})
     
     add_executable(${PROJECT_NAME}_example_thread_safety ${PROJECT_SOURCE_DIR}/examples/example_thread_safety.cpp)
-    target_link_libraries(${PROJECT_NAME}_example_thread_safety ${PROJECT_NAME})
+    target_link_libraries(${PROJECT_NAME}_example_thread_safety ${PROJECT_NAME} Threads::Threads)
     
     add_executable(${PROJECT_NAME}_example_serialize ${PROJECT_SOURCE_DIR}/examples/example_serialize.cpp)
     target_link_libraries(${PROJECT_NAME}_example_serialize ${PROJECT_NAME})

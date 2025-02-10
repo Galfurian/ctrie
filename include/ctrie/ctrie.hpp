@@ -7,14 +7,17 @@
 #include <iostream>
 #include <sstream>
 #include <string>
+#include <array>
 
 #if __cplusplus >= 201103L
 #include <mutex>
 #endif
 
-#define CTRIE_MAJOR_VERSION 1 ///< Major version of the library.
-#define CTRIE_MINOR_VERSION 0 ///< Minor version of the library.
-#define CTRIE_MICRO_VERSION 0 ///< Micro version of the library.
+enum : unsigned char {
+    CTRIE_MAJOR_VERSION = 1, ///< Major version of the library.
+    CTRIE_MINOR_VERSION = 0, ///< Minor version of the library.
+    CTRIE_MICRO_VERSION = 0  ///< Micro version of the library.
+};
 
 namespace ctrie
 {
@@ -38,16 +41,54 @@ public:
         // Nothing to do.
     }
 
+    /// @brief Copy constructor.
+    /// @param other The instance to copy from.
+    SNode(const SNode &other)
+        : value(other.value)
+    {
+        // Nothing to do.
+    }
+
+    /// @brief Copy assignment operator.
+    /// @param other The instance to copy from.
+    /// @return Reference to the instance.
+    auto operator=(const SNode &other) -> SNode &
+    {
+        if (this != &other) {
+            value = other.value;
+        }
+        return *this;
+    }
+
+    /// @brief Move constructor.
+    /// @param other The instance to move from.
+    SNode(SNode &&other) noexcept
+        : value(std::move(other.value))
+    {
+        // Nothing to do.
+    }
+
+    /// @brief Move assignment operator.
+    /// @param other The instance to move from.
+    /// @return Reference to the instance.
+    auto operator=(SNode &&other) noexcept -> SNode &
+    {
+        if (this != &other) {
+            value = std::move(other.value);
+        }
+        return *this;
+    }
+
     /// @brief Destruct the node.
     virtual ~SNode() = default;
 
     /// @brief Set the value of the node.
     /// @param _value The value to store.
-    inline void setValue(const T &_value) { value = _value; }
+    void setValue(const T &_value) { value = _value; }
 
     /// @brief Get the value of the node.
     /// @return The value of the node.
-    inline T getValue() const { return value; }
+    auto getValue() const -> T { return value; }
 
 private:
     /// The stored value.
@@ -68,8 +109,9 @@ public:
         , snode()
         , children()
     {
-        for (std::size_t i = 0; i < MAX_KEYS; ++i)
-            children[i] = NULL;
+        for (auto &i : children) {
+            i = NULL;
+        }
     }
 
     /// @brief Construct a new node.
@@ -82,39 +124,44 @@ public:
         , snode(new SNode<T>(_value))
         , children()
     {
-        for (std::size_t i = 0; i < MAX_KEYS; ++i)
-            children[i] = NULL;
+        for (auto &i : children) {
+            i = NULL;
+        }
     }
 
     /// @brief Destruct the node.
     virtual ~CNode()
     {
-        if (snode)
+        if (snode) {
             delete snode;
-        for (std::size_t i = 0; i < MAX_KEYS; ++i)
-            if (children[i])
-                delete children[i];
+        }
+        for (auto &child : children) {
+            if (child) {
+                delete child;
+            }
+        }
     }
 
     /// @brief Get the key of the node.
     /// @return The key of the node.
-    inline key_t getKey() const { return key; }
+    auto getKey() const -> key_t { return key; }
 
     /// @brief Get the parent of the node.
     /// @return The parent of the node.
-    inline CNode<T> *getParent() const { return parent; }
+    auto getParent() const -> CNode<T> * { return parent; }
 
     /// @brief Clear the stored value.
-    inline void clearSNode()
+    void clearSNode()
     {
-        if (snode)
+        if (snode) {
             delete snode;
+        }
         snode = NULL;
     }
 
     /// @brief Set the stored value.
     /// @param _value The value to store.
-    inline void setSNode(const T &_value)
+    void setSNode(const T &_value)
     {
         this->clearSNode();
         snode = new SNode<T>(_value);
@@ -122,57 +169,63 @@ public:
 
     /// @brief Get the stored value.
     /// @return The stored value.
-    inline SNode<T> *getSNode() const { return snode; }
+    auto getSNode() const -> SNode<T> * { return snode; }
 
     /// @brief Remove the child with the given key.
     /// @param c The key of the child to remove.
-    inline void removeChild(key_t c)
+    void removeChild(key_t c)
     {
-        if (c < 0)
+        if (c < 0) {
             throw std::domain_error("Key is a negative value.");
-        __remove_child(static_cast<std::size_t>(c));
+        }
+        _remove_child(static_cast<std::size_t>(c));
     }
 
     /// @brief Insert a child with the given key.
     /// @param c The key of the child to insert.
     /// @param child The child to insert.
     /// @return The inserted child.
-    inline CNode<T> *insertChild(key_t c, CNode<T> *child)
+    auto insertChild(key_t c, CNode<T> *child) -> CNode<T> *
     {
-        if (c < 0)
+        if (c < 0) {
             throw std::domain_error("Key is a negative value.");
-        std::size_t index = static_cast<std::size_t>(c);
-        __remove_child(index);
+        }
+        auto index = static_cast<std::size_t>(c);
+        _remove_child(index);
         return (children[index] = child);
     }
 
     /// @brief Get the child with the given key.
     /// @param c The key of the child to get.
     /// @return The child with the given key.
-    inline CNode<T> *at(key_t c)
+    auto at(key_t c) -> CNode<T> *
     {
-        if (c < 0)
+        if (c < 0) {
             throw std::domain_error("Key is a negative value.");
+        }
         return children[static_cast<std::size_t>(c)];
     }
 
     /// @brief Get the child with the given key.
     /// @param c The key of the child to get.
     /// @return The child with the given key.
-    inline const CNode<T> *at(key_t c) const
+    auto at(key_t c) const -> const CNode<T> *
     {
-        if (c < 0)
+        if (c < 0) {
             throw std::domain_error("Key is a negative value.");
+        }
         return children[static_cast<std::size_t>(c)];
     }
 
     /// @brief Check if the node has children.
     /// @return true if the node has children, false otherwise.
-    inline bool hasChildren() const
+    auto hasChildren() const -> bool
     {
-        for (std::size_t i = 0; i < MAX_KEYS; ++i)
-            if (children[i])
+        for (auto &child : children) {
+            if (child) {
                 return true;
+            }
+        }
         return false;
     }
 
@@ -180,7 +233,7 @@ public:
     /// @param prefix The prefix to prepend to each line of the output.
     /// @param isLast Whether this node is the last child in a sequence.
     /// @return A string representing the node.
-    std::string toString(const std::string &prefix = "", bool isLast = true) const
+    auto toString(const std::string &prefix = "", bool isLast = true) const -> std::string
     {
         std::stringstream ss;
         // Print the current node with its prefix, except for the root.
@@ -208,7 +261,7 @@ public:
 private:
     /// @brief Checks if there are more children after the given index.
     /// @param index The index to check.
-    inline bool isLastChild(std::size_t index) const
+    auto isLastChild(std::size_t index) const -> bool
     {
         for (std::size_t i = index + 1; i < MAX_KEYS; ++i) {
             if (children[i]) {
@@ -220,10 +273,11 @@ private:
 
     /// @brief Remove the child at the given index.
     /// @param index The index of the child to remove.
-    inline void __remove_child(std::size_t index)
+    void _remove_child(std::size_t index)
     {
-        if (children[index])
+        if (children[index]) {
             delete children[index];
+        }
         children[index] = NULL;
     }
 
@@ -234,7 +288,7 @@ private:
     /// The stored value.
     SNode<T> *snode;
     /// The childrens of the node.
-    CNode<T> *children[MAX_KEYS];
+    std::array<CNode<T> *, MAX_KEYS> children;
 };
 
 /// @brief A prefix tree.
@@ -251,15 +305,16 @@ public:
 
     virtual ~CTrie()
     {
-        if (_root)
+        {
             delete _root;
+        }
     }
 
     /// @brief Inserts the key-value pair into the Trie.
     /// @param key the key.
     /// @param value the value.
     /// @return true if the isertion was successfull, false otherwise.
-    inline bool insert(const std::string &key, T value)
+    auto insert(const std::string &key, T value) -> bool
     {
         // Check if the key is empty.
         if (key.empty()) {
@@ -274,14 +329,16 @@ public:
             _root = new CNode<T>(NULL, 0);
         }
         // Initialize the node to the root.
-        CNode<T> *node = _root, *child;
+        CNode<T> *node  = _root;
+        CNode<T> *child = nullptr;
         // Iterate on the characters of the node.
-        for (std::string::const_iterator it = key.begin(); it != key.end(); ++it) {
+        for (char it : key) {
             // Search the child.
-            child = node->at(*it);
+            child = node->at(it);
             // If I can't find any child with the respective letter, create one.
-            if (child == NULL)
-                child = node->insertChild(*it, new CNode<T>(node, *it));
+            if (child == NULL) {
+                child = node->insertChild(it, new CNode<T>(node, it));
+            }
             // Node now points to the child.
             node = child;
         }
@@ -298,7 +355,7 @@ public:
     /// @param key the key to use for the search.
     /// @param value the output variable where the found value is stored.
     /// @return true if we have found the value, false otherwise.
-    inline bool find(const std::string &key, T &value) const
+    auto find(const std::string &key, T &value) const -> bool
     {
         // Check if the key is empty.
         if (key.empty()) {
@@ -317,13 +374,14 @@ public:
             return false;
         }
         // Initialize the node to the root.
-        const CNode<T> *node = _root, *child;
+        const CNode<T> *node  = _root;
+        const CNode<T> *child = nullptr;
         // Iterate on the characters of the node.
-        for (std::string::const_iterator it = key.begin(); it != key.end(); ++it) {
+        for (char it : key) {
             // Search the child.
-            child = node->at(*it);
+            child = node->at(it);
             // If I can't find any child with the respective letter, stop the search.
-            if (!child) {
+            if (child == nullptr) {
                 node = NULL;
                 break;
             }
@@ -349,7 +407,7 @@ public:
     /// @brief Inserisce la coppia chaive valore nel Trie.
     /// @param key   La chiave.
     /// @return Se l'inserimento e' andato a buon fine.
-    inline bool remove(const std::string &key)
+    auto remove(const std::string &key) -> bool
     {
         // Check if the key is empty.
         if (key.empty()) {
@@ -368,13 +426,14 @@ public:
             return false;
         }
         // Initialize the node to the root.
-        CNode<T> *node = _root, *child;
+        CNode<T> *node  = _root;
+        CNode<T> *child = nullptr;
         // Iterate on the characters of the node.
-        for (std::string::const_iterator it = key.begin(); it != key.end(); ++it) {
+        for (char it : key) {
             // Search the child.
-            child = node->at(*it);
+            child = node->at(it);
             // If I can't find any child with the respective letter, stop the search.
-            if (!child) {
+            if (child == nullptr) {
                 node = NULL;
                 break;
             }
@@ -410,10 +469,11 @@ public:
 
     /// @brief Get the string representation of the tree.
     /// @return A string representing the tree.
-    std::string toString() const
+    auto toString() const -> std::string
     {
-        if (_root)
+        if (_root) {
             return _root->toString();
+        }
         return std::string();
     }
 
@@ -434,7 +494,7 @@ private:
 /// @param rhs the trie.
 /// @return the stream.
 template <typename T>
-std::ostream &operator<<(std::ostream &lhs, const ctrie::CTrie<T> &rhs)
+auto operator<<(std::ostream &lhs, const ctrie::CTrie<T> &rhs) -> std::ostream &
 {
     lhs << rhs.toString();
     return lhs;
