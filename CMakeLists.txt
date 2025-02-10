@@ -152,16 +152,52 @@ if(BUILD_TESTS)
     # CMake has support for adding tests to a project.
     enable_testing()
     
-    # Add the test.
     add_executable(${PROJECT_NAME}_test_ctrie ${PROJECT_SOURCE_DIR}/tests/test_ctrie.cpp)
-    target_compile_options(${PROJECT_NAME}_test_ctrie PUBLIC ${COMPILE_OPTIONS})
     target_link_libraries(${PROJECT_NAME}_test_ctrie ${PROJECT_NAME})
-    add_test(${PROJECT_NAME}_test_${PROJECT_NAME}_run ${PROJECT_NAME}_test_ctrie)
+    add_test(${PROJECT_NAME}_test_ctrie_run ${PROJECT_NAME}_test_ctrie)
 
-    # Add the test.
+    add_executable(${PROJECT_NAME}_test_insert_find ${PROJECT_SOURCE_DIR}/tests/test_insert_find.cpp)
+    target_link_libraries(${PROJECT_NAME}_test_insert_find ${PROJECT_NAME})
+    add_test(${PROJECT_NAME}_test_insert_find_run ${PROJECT_NAME}_test_insert_find)
+
+    add_executable(${PROJECT_NAME}_test_insert_duplicate ${PROJECT_SOURCE_DIR}/tests/test_insert_duplicate.cpp)
+    target_link_libraries(${PROJECT_NAME}_test_insert_duplicate ${PROJECT_NAME})
+    add_test(${PROJECT_NAME}_test_insert_duplicate_run ${PROJECT_NAME}_test_insert_duplicate)
+
+    add_executable(${PROJECT_NAME}_test_remove_key ${PROJECT_SOURCE_DIR}/tests/test_remove_key.cpp)
+    target_link_libraries(${PROJECT_NAME}_test_remove_key ${PROJECT_NAME})
+    add_test(${PROJECT_NAME}_test_remove_key_run ${PROJECT_NAME}_test_remove_key)
+
+    add_executable(${PROJECT_NAME}_test_insert_common_prefix ${PROJECT_SOURCE_DIR}/tests/test_insert_common_prefix.cpp)
+    target_link_libraries(${PROJECT_NAME}_test_insert_common_prefix ${PROJECT_NAME})
+    add_test(${PROJECT_NAME}_test_insert_common_prefix_run ${PROJECT_NAME}_test_insert_common_prefix)
+
+    add_executable(${PROJECT_NAME}_test_remove_common_prefix ${PROJECT_SOURCE_DIR}/tests/test_remove_common_prefix.cpp)
+    target_link_libraries(${PROJECT_NAME}_test_remove_common_prefix ${PROJECT_NAME})
+    add_test(${PROJECT_NAME}_test_remove_common_prefix_run ${PROJECT_NAME}_test_remove_common_prefix)
+
+    add_executable(${PROJECT_NAME}_test_find_nonexistent ${PROJECT_SOURCE_DIR}/tests/test_find_nonexistent.cpp)
+    target_link_libraries(${PROJECT_NAME}_test_find_nonexistent ${PROJECT_NAME})
+    add_test(${PROJECT_NAME}_test_find_nonexistent_run ${PROJECT_NAME}_test_find_nonexistent)
+
+    add_executable(${PROJECT_NAME}_test_remove_nonexistent ${PROJECT_SOURCE_DIR}/tests/test_remove_nonexistent.cpp)
+    target_link_libraries(${PROJECT_NAME}_test_remove_nonexistent ${PROJECT_NAME})
+    add_test(${PROJECT_NAME}_test_remove_nonexistent_run ${PROJECT_NAME}_test_remove_nonexistent)
+
+    add_executable(${PROJECT_NAME}_test_insert_empty_key ${PROJECT_SOURCE_DIR}/tests/test_insert_empty_key.cpp)
+    target_link_libraries(${PROJECT_NAME}_test_insert_empty_key ${PROJECT_NAME})
+    add_test(${PROJECT_NAME}_test_insert_empty_key_run ${PROJECT_NAME}_test_insert_empty_key)
+
+    add_executable(${PROJECT_NAME}_test_find_after_reinsertion ${PROJECT_SOURCE_DIR}/tests/test_find_after_reinsertion.cpp)
+    target_link_libraries(${PROJECT_NAME}_test_find_after_reinsertion ${PROJECT_NAME})
+    add_test(${PROJECT_NAME}_test_find_after_reinsertion_run ${PROJECT_NAME}_test_find_after_reinsertion)
+
+    add_executable(${PROJECT_NAME}_test_long_key ${PROJECT_SOURCE_DIR}/tests/test_long_key.cpp)
+    target_link_libraries(${PROJECT_NAME}_test_long_key ${PROJECT_NAME})
+    add_test(${PROJECT_NAME}_test_long_key_run ${PROJECT_NAME}_test_long_key)
+
     if(Threads_FOUND)
         add_executable(${PROJECT_NAME}_test_concurrency ${PROJECT_SOURCE_DIR}/tests/test_concurrency.cpp)
-        target_compile_options(${PROJECT_NAME}_test_concurrency PUBLIC ${COMPILE_OPTIONS})
         target_link_libraries(${PROJECT_NAME}_test_concurrency ${PROJECT_NAME} Threads::Threads)
         add_test(${PROJECT_NAME}_test_concurrency_run ${PROJECT_NAME}_test_concurrency)
     endif()
