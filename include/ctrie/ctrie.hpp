@@ -209,7 +209,12 @@ public:
     /// @return true if the node has children, false otherwise.
     auto hasChildren() const -> bool
     {
-        return std::any_of(children.begin(), children.end(), [](const auto &child) { return child != nullptr; });
+        for (const auto &child : children) {
+            if (child) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /// @brief Get the string representation of the node.
